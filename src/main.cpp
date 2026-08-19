@@ -11,7 +11,7 @@ const int PIN_ECHO = 18;
 
 // Buzzer passivo
 const int PIN_BUZZER = 21;
-const int FREQUENCIA_BUZZER = 7500;
+const int FREQUENCIA_BUZZER = 2500;
 
 // LEDs: longe → perto
 const int LED_PINS[] = {
@@ -28,9 +28,6 @@ const int NUM_LEDS = 6;
 // Intervalo entre leituras
 const unsigned long READ_INTERVAL = 70;
 
-// Duração de cada apito
-const unsigned long DURACAO_APITO = 100;
-
 unsigned long ultimaLeitura = 0;
 unsigned long ultimoEventoBuzzer = 0;
 
@@ -45,10 +42,7 @@ void atualizarBuzzer(float distancia);
 
 void ligarBuzzer();
 void desligarBuzzer();
-
 void apagarLEDs();
-void testarLEDs();
-void testarBuzzer();
 
 // =============================================================
 // SETUP
@@ -76,10 +70,6 @@ void setup() {
   Serial.println("TRIG: GPIO 5");
   Serial.println("ECHO: GPIO 18");
   Serial.println("BUZZER: GPIO 21");
-
-  testarLEDs();
-  testarBuzzer();
-
   Serial.println("Iniciando medicoes...");
 }
 
@@ -187,35 +177,37 @@ void atualizarLEDs(float distancia) {
 // =============================================================
 void atualizarBuzzer(float distancia) {
   unsigned long agora = millis();
-  unsigned long intervaloApito = 0;
 
-  // Fora da área de alerta
+  unsigned long intervaloApito = 0;
+  unsigned long duracaoApito = 100;
+
   if (distancia > 45.0f || distancia < 2.0f) {
     desligarBuzzer();
     return;
   }
 
-  // Até 5 cm: som contínuo
-  if (distancia <= 5.0f) {
-    ligarBuzzer();
-    return;
-  }
-
-  // Quanto mais perto, menor o intervalo
   if (distancia > 30.0f) {
     intervaloApito = 900;
+    duracaoApito = 100;
   } else if (distancia > 20.0f) {
     intervaloApito = 650;
+    duracaoApito = 100;
   } else if (distancia > 15.0f) {
     intervaloApito = 450;
+    duracaoApito = 100;
   } else if (distancia > 10.0f) {
     intervaloApito = 300;
-  } else {
+    duracaoApito = 90;
+  } else if (distancia > 5.0f) {
     intervaloApito = 150;
+    duracaoApito = 70;
+  } else {
+    intervaloApito = 50;
+    duracaoApito = 50;
   }
 
   if (buzzerLigado) {
-    if (agora - ultimoEventoBuzzer >= DURACAO_APITO) {
+    if (agora - ultimoEventoBuzzer >= duracaoApito) {
       desligarBuzzer();
     }
   } else {
@@ -256,39 +248,4 @@ void apagarLEDs() {
   for (int i = 0; i < NUM_LEDS; i++) {
     digitalWrite(LED_PINS[i], LOW);
   }
-}
-
-// =============================================================
-// TESTE DOS LEDs
-// =============================================================
-void testarLEDs() {
-  Serial.println("Testando LEDs...");
-
-  for (int i = 0; i < NUM_LEDS; i++) {
-    digitalWrite(LED_PINS[i], HIGH);
-    delay(200);
-    digitalWrite(LED_PINS[i], LOW);
-  }
-
-  apagarLEDs();
-
-  Serial.println("Teste dos LEDs concluido");
-}
-
-// =============================================================
-// TESTE DO BUZZER
-// =============================================================
-void testarBuzzer() {
-  Serial.println("Testando buzzer...");
-
-  tone(PIN_BUZZER, FREQUENCIA_BUZZER);
-  delay(700);
-
-  noTone(PIN_BUZZER);
-  delay(300);
-
-  buzzerLigado = false;
-  ultimoEventoBuzzer = millis();
-
-  Serial.println("Teste do buzzer concluido");
 }
